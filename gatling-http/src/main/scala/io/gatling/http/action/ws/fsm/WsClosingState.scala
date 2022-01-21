@@ -24,6 +24,14 @@ import com.typesafe.scalalogging.StrictLogging
 
 final class WsClosingState(fsm: WsFsm, actionName: String, session: Session, next: Action, closeStart: Long) extends WsState(fsm) with StrictLogging {
 
+  override def onTimeout(): NextWsState = {
+    logger.debug("Closing state timeout")
+
+    val newSession =
+      logResponse(session, actionName, closeStart, fsm.clock.nowMillis, KO, None, Some("Closing state timeout reached")).markAsFailed.remove(fsm.wsName)
+    NextWsState(new WsClosedState(fsm), () => next ! newSession)
+  }
+
   override def onTextFrameReceived(message: String, timestamp: Long): NextWsState = {
     logUnmatchedServerMessage(session)
     NextWsState(this)
@@ -35,6 +43,7 @@ final class WsClosingState(fsm: WsFsm, actionName: String, session: Session, nex
   }
 
   override def onWebSocketClosed(code: Int, reason: String, closeEnd: Long): NextWsState = {
+    fsm.cancelTimeout()
     // server has acked closing
     logger.debug("Server has acked closing")
     val newSession = logResponse(session, actionName, closeStart, closeEnd, OK, None, None).remove(fsm.wsName)
@@ -42,6 +51,7 @@ final class WsClosingState(fsm: WsFsm, actionName: String, session: Session, nex
   }
 
   override def onWebSocketCrashed(t: Throwable, timestamp: Long): NextWsState = {
+    fsm.cancelTimeout()
     logger.debug("WebSocket crashed while waiting for close ack")
     // crash, close anyway
     val newSession = logResponse(session, actionName, closeStart, timestamp, KO, None, Some(t.getMessage)).markAsFailed.remove(fsm.wsName)
