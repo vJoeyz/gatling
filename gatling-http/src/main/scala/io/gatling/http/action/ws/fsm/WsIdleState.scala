@@ -16,16 +16,17 @@
 
 package io.gatling.http.action.ws.fsm
 
+import scala.concurrent.duration.DurationInt
+
 import io.gatling.commons.stats.OK
 import io.gatling.core.action.Action
 import io.gatling.core.session.Session
-import io.gatling.http.check.ws.{WsFrameCheck, WsFrameCheckSequence}
+import io.gatling.http.check.ws.{ WsFrameCheck, WsFrameCheckSequence }
 import io.gatling.http.client.WebSocket
+
 import com.typesafe.scalalogging.StrictLogging
 import io.netty.buffer.Unpooled
-import io.netty.handler.codec.http.websocketx.{BinaryWebSocketFrame, CloseWebSocketFrame, TextWebSocketFrame}
-
-import scala.concurrent.duration.DurationInt
+import io.netty.handler.codec.http.websocketx.{ BinaryWebSocketFrame, CloseWebSocketFrame, TextWebSocketFrame }
 
 final class WsIdleState(fsm: WsFsm, session: Session, webSocket: WebSocket, protected val remainingReconnects: Int) extends WsState(fsm) with StrictLogging {
 
@@ -132,7 +133,7 @@ final class WsIdleState(fsm: WsFsm, session: Session, webSocket: WebSocket, prot
 
   override def onClientCloseRequest(actionName: String, session: Session, next: Action): NextWsState = {
     logger.debug("Client requested WebSocket close")
-    scheduleTimeout(30.seconds) // TODO: from where should we get this value?
+    scheduleTimeout(httpProtocol.wsPart.clientCloseTimeout)
     webSocket.sendFrame(new CloseWebSocketFrame())
 
     NextWsState(new WsClosingState(fsm, actionName, session, next, clock.nowMillis))

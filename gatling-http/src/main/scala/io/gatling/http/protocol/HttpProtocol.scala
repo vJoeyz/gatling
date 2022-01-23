@@ -21,6 +21,8 @@ import java.net.InetAddress
 import java.util.regex.Pattern
 import javax.net.ssl.KeyManagerFactory
 
+import scala.concurrent.duration.{ DurationInt, FiniteDuration }
+
 import io.gatling.commons.validation.Validation
 import io.gatling.core.CoreComponents
 import io.gatling.core.config.GatlingConfiguration
@@ -108,7 +110,8 @@ object HttpProtocol extends StrictLogging {
       wsPart = HttpProtocolWsPart(
         wsBaseUrls = Nil,
         maxReconnects = 0,
-        autoReplyTextFrames = PartialFunction.empty
+        autoReplyTextFrames = PartialFunction.empty,
+        clientCloseTimeout = 30.seconds
       ),
       proxyPart = HttpProtocolProxyPart(
         proxy = None,
@@ -186,7 +189,8 @@ final case class HttpProtocolResponsePart(
 final case class HttpProtocolWsPart(
     wsBaseUrls: List[String],
     maxReconnects: Int,
-    autoReplyTextFrames: PartialFunction[String, String]
+    autoReplyTextFrames: PartialFunction[String, String],
+    clientCloseTimeout: FiniteDuration
 )
 
 final case class HttpProtocolProxyPart(
