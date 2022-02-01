@@ -19,6 +19,7 @@ package io.gatling.http.protocol
 import java.net.{ Inet4Address, InetAddress, InetSocketAddress }
 import javax.net.ssl.KeyManagerFactory
 
+import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
 
 import io.gatling.commons.validation.Validation
@@ -200,6 +201,7 @@ final case class HttpProtocolBuilder(protocol: HttpProtocol, useOpenSsl: Boolean
   def wsAutoReplyTextFrame(f: PartialFunction[String, String]): HttpProtocolBuilder =
     this.modify(_.protocol.wsPart.autoReplyTextFrames).setTo(f)
   def wsAutoReplySocketIo4: HttpProtocolBuilder = wsAutoReplyTextFrame({ case "2" => "3" })
+  def wsClientCloseTimeout(timeout: FiniteDuration): HttpProtocolBuilder = this.modify(_.protocol.wsPart.clientCloseTimeout).setTo(timeout)
 
   // proxyPart
   def noProxyFor(hosts: String*): HttpProtocolBuilder = this.modify(_.protocol.proxyPart.proxyExceptions).setTo(hosts)
